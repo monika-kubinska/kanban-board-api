@@ -130,3 +130,6 @@ C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\obj\Debug\net10.0\refint\Kanb
 C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\obj\Debug\net10.0\KanbanApi.pdb
 C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\obj\Debug\net10.0\KanbanApi.genruntimeconfig.cache
 C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\obj\Debug\net10.0\ref\KanbanApi.dll
+C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\bin\Debug\net10.0\Swashbuckle.AspNetCore.Swagger.dll
+C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerGen.dll
+C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\bin\Debug\net10.0\Swashbuckle.AspNetCore.SwaggerUI.dll
