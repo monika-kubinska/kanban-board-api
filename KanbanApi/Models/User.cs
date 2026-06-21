@@ -8,3 +8,4 @@ public class User
     public string Name { get; set; }
 
     public List<TeamMember> Teams { get; set; }
+}
