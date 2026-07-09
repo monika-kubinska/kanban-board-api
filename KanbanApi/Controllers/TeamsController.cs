@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace KanbanApi.Controllers;
 
 [ApiController]
-[Route("teams")]
+[Route("api/[controller]")]
 public class TeamsController : ControllerBase
 {
     private readonly AppDbContext _db;

@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace KanbanApi.Controllers;
 
 [ApiController]
-[Route("auth")]
+[Route("api/[controller]")]
 public class AuthController : ControllerBase
 {
     private readonly AppDbContext _db;

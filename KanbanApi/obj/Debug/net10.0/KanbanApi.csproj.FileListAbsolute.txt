@@ -10,7 +10,6 @@ C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\obj\Debug\net10.0\KanbanApi.s
 C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\bin\Debug\net10.0\appsettings.Development.json
 C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\bin\Debug\net10.0\appsettings.json
 C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\bin\Debug\net10.0\KanbanApi.staticwebassets.endpoints.json
-C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\bin\Debug\net10.0\KanbanApi.exe
 C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\bin\Debug\net10.0\KanbanApi.deps.json
 C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\bin\Debug\net10.0\KanbanApi.runtimeconfig.json
 C:\Users\mrzepeck\repos\kanban-board-api\KanbanApi\bin\Debug\net10.0\KanbanApi.dll
