@@ -28,7 +28,18 @@ public class TeamsController : ControllerBase
             return Unauthorized();
 
         var teams = await _db.Teams
-            .Where(team => team.Members.Any(member => member.UserId == userId))
+            .Where(team => User.IsInRole(UserRole.Admin.ToString()) || team.Members.Any(member => member.UserId == userId))
+            .Select(team => new
+            {
+                team.Id,
+                team.Name,
+                Members = team.Members.Select(member => new
+                {
+                    member.UserId,
+                    member.User.Name,
+                    member.User.Email
+                }).ToList()
+            })
             .ToListAsync();
 
         return Ok(teams);
@@ -58,7 +69,11 @@ public class TeamsController : ControllerBase
         _db.Teams.Add(team);
         await _db.SaveChangesAsync();
 
-        return Ok(team);
+        return Ok(new
+        {
+            team.Id,
+            team.Name
+        });
     }
 
     [HttpPost("{teamId:guid}/join")]
@@ -121,6 +136,22 @@ public class TeamsController : ControllerBase
         return Ok(members);
     }
 
+    [HttpGet("users")]
+    public async Task<IActionResult> GetUsers()
+    {
+        var users = await _db.Users
+            .Select(user => new
+            {
+                user.Id,
+                user.Name,
+                user.Email,
+                user.Role
+            })
+            .ToListAsync();
+
+        return Ok(users);
+    }
+
     [HttpPost("{teamId:guid}/members")]
     public async Task<IActionResult> AddMember(Guid teamId, TeamMemberRequest request)
     {
@@ -142,7 +173,11 @@ public class TeamsController : ControllerBase
         _db.TeamMembers.Add(member);
         await _db.SaveChangesAsync();
 
-        return Ok(member);
+        return Ok(new
+        {
+            member.UserId,
+            member.TeamId
+        });
     }
 
     [HttpDelete("{teamId:guid}/members/{userId:guid}")]
