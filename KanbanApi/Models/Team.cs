@@ -6,4 +6,5 @@ public class Team
     public string Name { get; set; }
 
     public List<TeamMember> Members { get; set; }
+    public Board Board { get; set; }
 }

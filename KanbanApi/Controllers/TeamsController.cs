@@ -60,6 +60,7 @@ public class TeamsController : ControllerBase
         {
             Id = Guid.NewGuid(),
             Name = request.Name.Trim(),
+            Board = new Board { Id = Guid.NewGuid() },
             Members = new List<TeamMember>
             {
                 new() { UserId = userId.Value }

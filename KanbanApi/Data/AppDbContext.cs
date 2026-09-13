@@ -7,6 +7,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 {
     public DbSet<User> Users => Set<User>();
     public DbSet<Team> Teams => Set<Team>();
+    public DbSet<Board> Boards => Set<Board>();
     public DbSet<Item> Items => Set<Item>();
     public DbSet<TeamMember> TeamMembers => Set<TeamMember>();
     public DbSet<WipLimit> WipLimits => Set<WipLimit>();
@@ -27,6 +28,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<TeamMember>()
             .HasKey(tm => new { tm.UserId, tm.TeamId });
+
+        modelBuilder.Entity<Board>()
+            .HasOne(board => board.Team)
+            .WithOne(team => team.Board)
+            .HasForeignKey<Board>(board => board.TeamId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }
   
