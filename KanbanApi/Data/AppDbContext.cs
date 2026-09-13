@@ -14,6 +14,12 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Item>()
+            .Property(item => item.State)
+            .HasConversion(
+                state => state.ToStorageValue(),
+                value => ItemStateExtensions.FromStorageValue(value));
+
         modelBuilder.Entity<Team>().HasData(
             new Team { Id = Guid.Parse("10000000-0000-0000-0000-000000000001"), Name = "Zespół Alfa" },
             new Team { Id = Guid.Parse("10000000-0000-0000-0000-000000000002"), Name = "Zespół Beta" },

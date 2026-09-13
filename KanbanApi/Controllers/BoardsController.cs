@@ -33,7 +33,7 @@ public class BoardsController(AppDbContext db) : ControllerBase
                 team.Name,
                 BoardId = team.Board.Id,
                 Items = _db.Items
-                    .Where(item => item.TeamId == team.Id)
+                    .Where(item => item.TeamId == team.Id && item.State != ItemState.Ready)
                     .ToList(),
                 WipLimits = _db.WipLimits
                     .Where(limit => limit.TeamId == team.Id)
