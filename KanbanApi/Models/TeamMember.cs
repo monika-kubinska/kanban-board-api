@@ -7,4 +7,6 @@ public class TeamMember
 
     public Guid TeamId { get; set; }
     public Team Team { get; set; }
+
+    public string Role { get; set; } = "Member";
 }

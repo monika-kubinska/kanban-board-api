@@ -13,8 +13,24 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        modelBuilder.Entity<Team>().HasData(
+            new Team { Id = Guid.Parse("10000000-0000-0000-0000-000000000001"), Name = "Zespół Alfa" },
+            new Team { Id = Guid.Parse("10000000-0000-0000-0000-000000000002"), Name = "Zespół Beta" },
+            new Team { Id = Guid.Parse("10000000-0000-0000-0000-000000000003"), Name = "Zespół Gamma" },
+            new Team { Id = Guid.Parse("10000000-0000-0000-0000-000000000004"), Name = "Zespół Delta" },
+            new Team { Id = Guid.Parse("10000000-0000-0000-0000-000000000005"), Name = "Zespół Epsilon" },
+            new Team { Id = Guid.Parse("10000000-0000-0000-0000-000000000006"), Name = "Zespół Zeta" },
+            new Team { Id = Guid.Parse("10000000-0000-0000-0000-000000000007"), Name = "Zespół Eta" },
+            new Team { Id = Guid.Parse("10000000-0000-0000-0000-000000000008"), Name = "Zespół Theta" },
+            new Team { Id = Guid.Parse("10000000-0000-0000-0000-000000000009"), Name = "Zespół Iota" },
+            new Team { Id = Guid.Parse("10000000-0000-0000-0000-000000000010"), Name = "Zespół Kappa" });
+
         modelBuilder.Entity<TeamMember>()
             .HasKey(tm => new { tm.UserId, tm.TeamId });
+
+        modelBuilder.Entity<TeamMember>()
+            .Property(tm => tm.Role)
+            .HasDefaultValue("Member");
     }
 }
   

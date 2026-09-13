@@ -1,4 +1,5 @@
 using KanbanApi.Data;
+using KanbanApi.DTO;
 using KanbanApi.Models;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.EntityFrameworkCore;
@@ -34,13 +35,184 @@ public class TeamsController : ControllerBase
     }
 
     [HttpPost]
-    public async Task<IActionResult> CreateTeam([FromBody] Team team)
+    public async Task<IActionResult> CreateTeam([FromBody] CreateTeamRequest request)
     {
-        team.Id = Guid.NewGuid();
+        if (string.IsNullOrWhiteSpace(request.Name))
+            return BadRequest("Team name is required.");
+
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized();
+
+        var team = new Team
+        {
+            Id = Guid.NewGuid(),
+            Name = request.Name.Trim(),
+            Members = new List<TeamMember>
+            {
+                new() { UserId = userId.Value, Role = "Owner" }
+            }
+        };
 
         _db.Teams.Add(team);
         await _db.SaveChangesAsync();
 
         return Ok(team);
+    }
+
+    [HttpPost("{teamId:guid}/join")]
+    public async Task<IActionResult> JoinTeam(Guid teamId)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized();
+
+        if (!await _db.Teams.AnyAsync(team => team.Id == teamId))
+            return NotFound();
+
+        if (await _db.TeamMembers.AnyAsync(member =>
+            member.TeamId == teamId && member.UserId == userId.Value))
+            return Conflict("User is already a member of this team.");
+
+        _db.TeamMembers.Add(new TeamMember
+        {
+            TeamId = teamId,
+            UserId = userId.Value,
+            Role = "Member"
+        });
+        await _db.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpDelete("{teamId:guid}/leave")]
+    public async Task<IActionResult> LeaveTeam(Guid teamId)
+    {
+        var userId = GetCurrentUserId();
+        if (!userId.HasValue)
+            return Unauthorized();
+
+        var member = await _db.TeamMembers.FindAsync(userId.Value, teamId);
+        if (member == null)
+            return NotFound();
+
+        if (member.Role == "Owner")
+            return Conflict("The team owner must transfer ownership before leaving.");
+
+        _db.TeamMembers.Remove(member);
+        await _db.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    [HttpGet("{teamId:guid}/members")]
+    public async Task<IActionResult> GetMembers(Guid teamId)
+    {
+        if (!await IsTeamMember(teamId))
+            return NotFound();
+
+        var members = await _db.TeamMembers
+            .Where(member => member.TeamId == teamId)
+            .Select(member => new
+            {
+                member.UserId,
+                member.User.Name,
+                member.User.Email,
+                member.Role
+            })
+            .ToListAsync();
+
+        return Ok(members);
+    }
+
+    [HttpPost("{teamId:guid}/members")]
+    public async Task<IActionResult> AddMember(Guid teamId, TeamMemberRequest request)
+    {
+        if (!await CanManageTeam(teamId))
+            return Forbid();
+
+        if (!IsValidRole(request.Role))
+            return BadRequest("Role must be Owner, Admin or Member.");
+
+        if (!await _db.Teams.AnyAsync(team => team.Id == teamId) ||
+            !await _db.Users.AnyAsync(user => user.Id == request.UserId))
+            return NotFound();
+
+        if (await _db.TeamMembers.AnyAsync(member => member.TeamId == teamId && member.UserId == request.UserId))
+            return Conflict("User is already a member of this team.");
+
+        var member = new TeamMember
+        {
+            TeamId = teamId,
+            UserId = request.UserId,
+            Role = request.Role
+        };
+        _db.TeamMembers.Add(member);
+        await _db.SaveChangesAsync();
+
+        return Ok(member);
+    }
+
+    [HttpPut("{teamId:guid}/members/{userId:guid}")]
+    public async Task<IActionResult> UpdateMemberRole(Guid teamId, Guid userId, TeamMemberRequest request)
+    {
+        if (!await CanManageTeam(teamId))
+            return Forbid();
+
+        if (!IsValidRole(request.Role))
+            return BadRequest("Role must be Owner, Admin or Member.");
+
+        var member = await _db.TeamMembers.FindAsync(userId, teamId);
+        if (member == null)
+            return NotFound();
+
+        member.Role = request.Role;
+        await _db.SaveChangesAsync();
+
+        return Ok(member);
+    }
+
+    [HttpDelete("{teamId:guid}/members/{userId:guid}")]
+    public async Task<IActionResult> RemoveMember(Guid teamId, Guid userId)
+    {
+        if (!await CanManageTeam(teamId))
+            return Forbid();
+
+        var member = await _db.TeamMembers.FindAsync(userId, teamId);
+        if (member == null)
+            return NotFound();
+
+        _db.TeamMembers.Remove(member);
+        await _db.SaveChangesAsync();
+
+        return NoContent();
+    }
+
+    private Guid? GetCurrentUserId()
+    {
+        return Guid.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out var userId)
+            ? userId
+            : null;
+    }
+
+    private async Task<bool> IsTeamMember(Guid teamId)
+    {
+        var userId = GetCurrentUserId();
+        return userId.HasValue && await _db.TeamMembers.AnyAsync(
+            member => member.TeamId == teamId && member.UserId == userId.Value);
+    }
+
+    private async Task<bool> CanManageTeam(Guid teamId)
+    {
+        var userId = GetCurrentUserId();
+        return userId.HasValue && await _db.TeamMembers.AnyAsync(member =>
+            member.TeamId == teamId &&
+            member.UserId == userId.Value &&
+            (member.Role == "Owner" || member.Role == "Admin"));
+    }
+
+    private static bool IsValidRole(string role)
+    {
+        return role is "Owner" or "Admin" or "Member";
     }
 }
