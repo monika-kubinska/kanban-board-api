@@ -27,10 +27,6 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
 
         modelBuilder.Entity<TeamMember>()
             .HasKey(tm => new { tm.UserId, tm.TeamId });
-
-        modelBuilder.Entity<TeamMember>()
-            .Property(tm => tm.Role)
-            .HasDefaultValue("Member");
     }
 }
   

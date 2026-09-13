@@ -26,7 +26,14 @@ public class AuthController : ControllerBase
     [HttpPost("register")]
     public async Task<IActionResult> Register(RegisterRequest req)
     {
-        var user = new User { Id = Guid.NewGuid(), Email = req.Email, PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password), Name = req.Name };
+        var user = new User
+        {
+            Id = Guid.NewGuid(),
+            Email = req.Email,
+            PasswordHash = BCrypt.Net.BCrypt.HashPassword(req.Password),
+            Name = req.Name,
+            Role = UserRole.TeamMember
+        };
 
         _db.Users.Add(user);
         await _db.SaveChangesAsync();
@@ -50,7 +57,8 @@ public class AuthController : ControllerBase
         var claims = new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-            new Claim(ClaimTypes.Email, user.Email)
+            new Claim(ClaimTypes.Email, user.Email),
+            new Claim(ClaimTypes.Role, user.Role.ToString())
         };
         var token = new JwtSecurityToken(
             claims: claims,

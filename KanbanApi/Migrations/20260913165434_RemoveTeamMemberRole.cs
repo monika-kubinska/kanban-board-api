@@ -1,0 +1,29 @@
+﻿using Microsoft.EntityFrameworkCore.Migrations;
+
+#nullable disable
+
+namespace KanbanApi.Migrations
+{
+    /// <inheritdoc />
+    public partial class RemoveTeamMemberRole : Migration
+    {
+        /// <inheritdoc />
+        protected override void Up(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.DropColumn(
+                name: "Role",
+                table: "TeamMembers");
+        }
+
+        /// <inheritdoc />
+        protected override void Down(MigrationBuilder migrationBuilder)
+        {
+            migrationBuilder.AddColumn<string>(
+                name: "Role",
+                table: "TeamMembers",
+                type: "text",
+                nullable: false,
+                defaultValue: "Member");
+        }
+    }
+}

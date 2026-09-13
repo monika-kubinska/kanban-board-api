@@ -35,6 +35,7 @@ public class TeamsController : ControllerBase
     }
 
     [HttpPost]
+    [Authorize(Roles = nameof(UserRole.Admin))]
     public async Task<IActionResult> CreateTeam([FromBody] CreateTeamRequest request)
     {
         if (string.IsNullOrWhiteSpace(request.Name))
@@ -50,7 +51,7 @@ public class TeamsController : ControllerBase
             Name = request.Name.Trim(),
             Members = new List<TeamMember>
             {
-                new() { UserId = userId.Value, Role = "Owner" }
+                new() { UserId = userId.Value }
             }
         };
 
@@ -77,8 +78,7 @@ public class TeamsController : ControllerBase
         _db.TeamMembers.Add(new TeamMember
         {
             TeamId = teamId,
-            UserId = userId.Value,
-            Role = "Member"
+            UserId = userId.Value
         });
         await _db.SaveChangesAsync();
 
@@ -95,9 +95,6 @@ public class TeamsController : ControllerBase
         var member = await _db.TeamMembers.FindAsync(userId.Value, teamId);
         if (member == null)
             return NotFound();
-
-        if (member.Role == "Owner")
-            return Conflict("The team owner must transfer ownership before leaving.");
 
         _db.TeamMembers.Remove(member);
         await _db.SaveChangesAsync();
@@ -117,8 +114,7 @@ public class TeamsController : ControllerBase
             {
                 member.UserId,
                 member.User.Name,
-                member.User.Email,
-                member.Role
+                member.User.Email
             })
             .ToListAsync();
 
@@ -128,11 +124,8 @@ public class TeamsController : ControllerBase
     [HttpPost("{teamId:guid}/members")]
     public async Task<IActionResult> AddMember(Guid teamId, TeamMemberRequest request)
     {
-        if (!await CanManageTeam(teamId))
+        if (!User.IsInRole(UserRole.Admin.ToString()))
             return Forbid();
-
-        if (!IsValidRole(request.Role))
-            return BadRequest("Role must be Owner, Admin or Member.");
 
         if (!await _db.Teams.AnyAsync(team => team.Id == teamId) ||
             !await _db.Users.AnyAsync(user => user.Id == request.UserId))
@@ -144,29 +137,9 @@ public class TeamsController : ControllerBase
         var member = new TeamMember
         {
             TeamId = teamId,
-            UserId = request.UserId,
-            Role = request.Role
+            UserId = request.UserId
         };
         _db.TeamMembers.Add(member);
-        await _db.SaveChangesAsync();
-
-        return Ok(member);
-    }
-
-    [HttpPut("{teamId:guid}/members/{userId:guid}")]
-    public async Task<IActionResult> UpdateMemberRole(Guid teamId, Guid userId, TeamMemberRequest request)
-    {
-        if (!await CanManageTeam(teamId))
-            return Forbid();
-
-        if (!IsValidRole(request.Role))
-            return BadRequest("Role must be Owner, Admin or Member.");
-
-        var member = await _db.TeamMembers.FindAsync(userId, teamId);
-        if (member == null)
-            return NotFound();
-
-        member.Role = request.Role;
         await _db.SaveChangesAsync();
 
         return Ok(member);
@@ -175,7 +148,7 @@ public class TeamsController : ControllerBase
     [HttpDelete("{teamId:guid}/members/{userId:guid}")]
     public async Task<IActionResult> RemoveMember(Guid teamId, Guid userId)
     {
-        if (!await CanManageTeam(teamId))
+        if (!User.IsInRole(UserRole.Admin.ToString()))
             return Forbid();
 
         var member = await _db.TeamMembers.FindAsync(userId, teamId);
@@ -202,17 +175,4 @@ public class TeamsController : ControllerBase
             member => member.TeamId == teamId && member.UserId == userId.Value);
     }
 
-    private async Task<bool> CanManageTeam(Guid teamId)
-    {
-        var userId = GetCurrentUserId();
-        return userId.HasValue && await _db.TeamMembers.AnyAsync(member =>
-            member.TeamId == teamId &&
-            member.UserId == userId.Value &&
-            (member.Role == "Owner" || member.Role == "Admin"));
-    }
-
-    private static bool IsValidRole(string role)
-    {
-        return role is "Owner" or "Admin" or "Member";
-    }
 }
