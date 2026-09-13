@@ -1,11 +1,15 @@
 using KanbanApi.Data;
 using KanbanApi.Models;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Mvc;
+using System.Security.Claims;
 
 namespace KanbanApi.Controllers;
 
 [ApiController]
 [Route("api/[controller]")]
+[Authorize]
 public class TeamsController : ControllerBase
 {
     private readonly AppDbContext _db;
@@ -16,9 +20,17 @@ public class TeamsController : ControllerBase
     }
 
     [HttpGet]
-    public IActionResult GetTeams()
+    public async Task<IActionResult> GetTeams()
     {
-        return Ok(_db.Teams.ToList());
+        var userIdClaim = User.FindFirstValue(ClaimTypes.NameIdentifier);
+        if (!Guid.TryParse(userIdClaim, out var userId))
+            return Unauthorized();
+
+        var teams = await _db.Teams
+            .Where(team => team.Members.Any(member => member.UserId == userId))
+            .ToListAsync();
+
+        return Ok(teams);
     }
 
     [HttpPost]

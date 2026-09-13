@@ -2,7 +2,11 @@ using BCrypt.Net;
 using KanbanApi.Data;
 using KanbanApi.DTO;
 using KanbanApi.Models;
+using Microsoft.IdentityModel.Tokens;
 using Microsoft.AspNetCore.Mvc;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
+using System.Text;
 
 namespace KanbanApi.Controllers;
 
@@ -11,10 +15,12 @@ namespace KanbanApi.Controllers;
 public class AuthController : ControllerBase
 {
     private readonly AppDbContext _db;
+    private readonly IConfiguration _configuration;
 
-    public AuthController(AppDbContext db)
+    public AuthController(AppDbContext db, IConfiguration configuration)
     {
         _db = db;
+        _configuration = configuration;
     }
 
     [HttpPost("register")]
@@ -36,6 +42,21 @@ public class AuthController : ControllerBase
         if (user == null || !BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
             return Unauthorized();
 
-        return Ok(new { token = "mock-jwt-token" });
+        var key = _configuration["Jwt:Key"]
+            ?? throw new InvalidOperationException("JWT signing key is not configured.");
+        var credentials = new SigningCredentials(
+            new SymmetricSecurityKey(Encoding.UTF8.GetBytes(key)),
+            SecurityAlgorithms.HmacSha256);
+        var claims = new[]
+        {
+            new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+            new Claim(ClaimTypes.Email, user.Email)
+        };
+        var token = new JwtSecurityToken(
+            claims: claims,
+            expires: DateTime.UtcNow.AddHours(8),
+            signingCredentials: credentials);
+
+        return Ok(new { token = new JwtSecurityTokenHandler().WriteToken(token) });
     }
 }
